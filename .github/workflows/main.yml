@@ -1,0 +1,35 @@
+name: Build Kernel for Xiaomi Mi A1 (tissot)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout kernel source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Install ARM64 cross-compiler
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-aarch64-linux-gnu
+
+      - name: Configure kernel (defconfig)
+        run: make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- defconfig
+
+      - name: Build kernel image (Image.gz)
+        run: make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- -j$(nproc) Image.gz
+
+      - name: Build device tree blob (tissot only)
+        run: make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- qcom/msm8953-xiaomi-tissot.dtb
+
+      - name: Upload kernel and DTB as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tissot-kernel
+          path: |
+            arch/arm64/boot/Image.gz
+            arch/arm64/boot/dts/qcom/msm8953-xiaomi-tissot.dtb
